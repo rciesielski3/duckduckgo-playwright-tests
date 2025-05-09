@@ -1,6 +1,6 @@
 import { Page, Locator } from "@playwright/test";
 
-export class DuckDuckGoHomePage {
+export class HomePage {
   readonly page: Page;
   readonly searchInput: Locator;
 
