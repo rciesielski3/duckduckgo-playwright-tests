@@ -13,6 +13,10 @@ export class SearchResultsPage {
     await expect(this.results.first()).toBeVisible({ timeout: 5000 });
   }
 
+  async expectNoResults() {
+    await expect(this.results).toHaveCount(0);
+  }
+
   async getResultCount(): Promise<number> {
     return await this.results.count();
   }
