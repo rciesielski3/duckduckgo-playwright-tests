@@ -10,6 +10,6 @@ export class SearchResultsPage {
   }
 
   async expectResultsVisible() {
-    await expect(this.results).toBeVisible();
+    await expect(this.results.first()).toBeVisible({ timeout: 5000 });
   }
 }
