@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { DuckDuckGoHomePage } from "../pages/DuckDuckGoHomePage";
+import { HomePage } from "../pages/HomePage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 
 test.describe("DuckDuckGo Search Flow", () => {
   test("should load DuckDuckGo and return results for a query", async ({
     page,
   }) => {
-    const homePage = new DuckDuckGoHomePage(page);
+    const homePage = new HomePage(page);
     const resultsPage = new SearchResultsPage(page);
 
     await homePage.goto();
@@ -15,5 +15,11 @@ test.describe("DuckDuckGo Search Flow", () => {
     await homePage.searchFor("Playwright Testing");
 
     await resultsPage.expectResultsVisible();
+
+    const resultCount = await resultsPage.getResultCount();
+    console.log(`🔎 Results found: ${resultCount}`);
+
+    await resultsPage.logTopResults();
+    expect(resultCount).toBeGreaterThan(0);
   });
 });
