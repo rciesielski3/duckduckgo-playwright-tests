@@ -83,6 +83,20 @@ The following areas are emphasized:
 
 ---
 
+## 🧪 Testing Considerations
+
+- Use semantic and resilient locators (`getByRole`, `getByLabel`, `getByTestId`) for consistent targeting, even as DOM structures change.
+- Group tests by behavior (not by technical implementation).
+- Limit the number of assertions per test to isolate failures and improve clarity.
+- Emulate realistic user flows (e.g. searching, clicking links, keyboard input) to validate actual usage paths.
+- Handle strict-mode errors by narrowing queries with `.first()` or `.nth()` where multiple elements match the same selector.
+- Validate critical path elements first: if they break, the experience breaks.
+- Log contextual output (e.g. search result summaries) to enhance debugging or review.
+- Use route mocking to isolate frontend behavior from unpredictable external endpoints.
+- Include accessibility checks to ensure the application supports all users, not just sighted or mouse-based interaction.
+
+---
+
 ## 📁 Project Structure
 
 ```
