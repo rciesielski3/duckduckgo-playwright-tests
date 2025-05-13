@@ -13,7 +13,7 @@ test.describe("DuckDuckGo Search Flow", () => {
     await expect(homePage.searchInput).toBeVisible();
 
     await homePage.searchFor("Playwright Testing");
-
+    await page.waitForTimeout(500);
     await resultsPage.expectResultsVisible();
 
     const resultCount = await resultsPage.getResultCount();
