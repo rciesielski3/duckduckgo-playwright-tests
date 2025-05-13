@@ -2,9 +2,10 @@ import { test, expect } from "@playwright/test";
 import { HomePage } from "../pages/HomePage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 
-test.describe("Negative Search Input Scenarios (POM)", () => {
+test.describe("Negative Search Input Scenarios", () => {
   let homePage: HomePage;
   let resultsPage: SearchResultsPage;
+  const baseURL = "https://duckduckgo.com/";
 
   test.beforeEach(async ({ page }) => {
     homePage = new HomePage(page);
@@ -16,7 +17,7 @@ test.describe("Negative Search Input Scenarios (POM)", () => {
     await homePage.searchFor("");
     await page.waitForTimeout(500);
 
-    await expect(page).toHaveURL("https://duckduckgo.com/");
+    await expect(page).toHaveURL(baseURL);
     await resultsPage.expectNoResults();
   });
 
@@ -26,7 +27,7 @@ test.describe("Negative Search Input Scenarios (POM)", () => {
     await homePage.searchFor(" ");
     await page.waitForTimeout(500);
 
-    await expect(page).toHaveURL("https://duckduckgo.com/");
+    await expect(page).toHaveURL(baseURL);
     await resultsPage.expectNoResults();
   });
 

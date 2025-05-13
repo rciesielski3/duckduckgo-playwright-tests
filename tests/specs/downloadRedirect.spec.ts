@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { HomePage } from "../pages/HomePage";
 
 test.describe("Route interception for Download Browser link", () => {
   test("should mock redirection to Playwright.dev when clicking Download Browser", async ({
@@ -13,7 +14,8 @@ test.describe("Route interception for Download Browser link", () => {
       });
     });
 
-    await page.goto("/");
+    const homePage = new HomePage(page);
+    await homePage.goto();
 
     const downloadLink = page.getByRole("link", { name: "Download Browser" });
     await expect(downloadLink).toBeVisible();

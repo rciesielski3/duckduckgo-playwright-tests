@@ -1,11 +1,13 @@
 import { test, expect } from "@playwright/test";
+import { HomePage } from "../pages/HomePage";
 
 test.describe("DuckDuckGo Homepage UI", () => {
   test("should display base homepage elements", async ({ page }) => {
-    await page.goto("/");
+    const homePage = new HomePage(page);
+    await homePage.goto();
 
     await expect(
-      page.getByRole("combobox", { name: /Search with DuckDuckGo/i })
+      page.getByRole("combobox", { name: /Search with DuckDuckGo/ })
     ).toBeVisible();
 
     await expect(
