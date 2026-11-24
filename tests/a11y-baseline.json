@@ -1,0 +1,20 @@
+{
+  "_comment": "Known critical/serious axe rule violations on the DuckDuckGo homepage, accepted as third-party issues we cannot fix. The accessibility test fails on any critical/serious rule NOT listed here. Remove an entry when upstream fixes it; add one only with a reason.",
+  "knownViolations": [
+    {
+      "id": "aria-valid-attr-value",
+      "impact": "critical",
+      "reason": "Third-party markup references an invalid ARIA attribute value (observed 2026-11)."
+    },
+    {
+      "id": "aria-prohibited-attr",
+      "impact": "serious",
+      "reason": "Third-party markup uses ARIA attributes prohibited on the element role (observed 2026-11)."
+    },
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "reason": "Third-party marketing section has low-contrast text (observed 2026-11)."
+    }
+  ]
+}

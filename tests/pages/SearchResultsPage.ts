@@ -10,32 +10,24 @@ export class SearchResultsPage {
   }
 
   async expectResultsVisible() {
-    await expect(this.results.first()).toBeVisible({ timeout: 5000 });
+    await expect(this.results.first()).toBeVisible();
   }
 
   async expectNoResults() {
     await expect(this.results).toHaveCount(0);
   }
 
-  async getResultCount(): Promise<number> {
-    return await this.results.count();
-  }
-
-  async logTopResults(count: number = 3) {
-    const items = await this.results.elementHandles();
-
-    for (let i = 0; i < Math.min(count, items.length); i++) {
-      const item = items[i];
-
-      const urlElement = await item.$('[data-testid="result-extras-url-link"]');
-      const snippetElement = await item.$('[data-testid="snippet"]');
-
-      const urlText = urlElement ? await urlElement.innerText() : "(no url)";
-      const snippetText = snippetElement
-        ? await snippetElement.innerText()
-        : "(no snippet)";
-
-      console.log(`${i + 1}. "${urlText}", snippet: "${snippetText}"`);
+  /** Reads (url, snippet) of the first results; used for assertions, not logging. */
+  async topResults(count = 3): Promise<{ url: string; snippet: string }[]> {
+    const n = Math.min(count, await this.results.count());
+    const out: { url: string; snippet: string }[] = [];
+    for (let i = 0; i < n; i++) {
+      const item = this.results.nth(i);
+      out.push({
+        url: await item.getByTestId("result-extras-url-link").innerText(),
+        snippet: await item.getByTestId("snippet").innerText(),
+      });
     }
+    return out;
   }
 }

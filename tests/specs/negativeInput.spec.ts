@@ -1,51 +1,44 @@
 import { test, expect } from "@playwright/test";
 import { HomePage } from "../pages/HomePage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
+import { mockSearch } from "../support/searchMock";
 
-test.describe("Negative Search Input Scenarios", () => {
+test.describe("Negative search input (results page mocked)", () => {
   let homePage: HomePage;
-  let resultsPage: SearchResultsPage;
-  const baseURL = "https://duckduckgo.com/";
 
   test.beforeEach(async ({ page }) => {
     homePage = new HomePage(page);
-    resultsPage = new SearchResultsPage(page);
     await homePage.goto();
   });
 
-  test("should not submit empty input", async ({ page }) => {
+  test("blank input is never submitted", async ({ page }) => {
+    const mock = await mockSearch(page);
+
     await homePage.searchFor("");
-    await page.waitForTimeout(500);
+    await homePage.searchFor("   ");
+    await expect(page).toHaveURL(/^https:\/\/duckduckgo\.com\/?$/);
 
-    await expect(page).toHaveURL(baseURL);
-    await resultsPage.expectNoResults();
+    // Positive control: the hook is alive, and anything submitted earlier
+    // would have been recorded before this entry.
+    await homePage.searchFor("control");
+    await expect(page).toHaveURL(/[?&]q=control/);
+    expect(mock.queries).toEqual(["control"]);
   });
 
-  test("should not trigger search on whitespace-only input", async ({
-    page,
-  }) => {
-    await homePage.searchFor(" ");
-    await page.waitForTimeout(500);
+  for (const query of [")(*&^%$#@!", "$#@!   ", "<script>alert(1)</script>"]) {
+    test(`special characters are sent as-is and handled: ${JSON.stringify(query)}`, async ({
+      page,
+    }) => {
+      const mock = await mockSearch(page, "no-results");
+      const resultsPage = new SearchResultsPage(page);
 
-    await expect(page).toHaveURL(baseURL);
-    await resultsPage.expectNoResults();
-  });
+      await homePage.searchFor(query);
 
-  test("should handle invalid characters gracefully", async () => {
-    await homePage.searchFor(")(*&^%$#@!");
-
-    const count = await resultsPage.getResultCount();
-    console.log(`Results found: ${count}`);
-    expect(count).toBeGreaterThanOrEqual(0);
-    await resultsPage.logTopResults();
-  });
-
-  test("should handle symbols and spaces", async () => {
-    await homePage.searchFor("$#@!   ");
-
-    const count = await resultsPage.getResultCount();
-    console.log(`Results found: ${count}`);
-    expect(count).toBeGreaterThanOrEqual(0);
-    await resultsPage.logTopResults();
-  });
+      await expect(page.getByTestId("no-results")).toBeVisible();
+      await resultsPage.expectNoResults();
+      expect(mock.queries).toHaveLength(1);
+      // Round-trips through URL encoding unchanged (modulo trailing blanks).
+      expect(mock.queries[0].trim()).toBe(query.trim());
+    });
+  }
 });
