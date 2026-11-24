@@ -1,0 +1,51 @@
+name: Playwright
+
+# On demand only, to save resources. Run from the Actions tab or:
+#   gh workflow run playwright.yml -f suite=deterministic
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Which suite to run"
+        type: choice
+        options:
+          - deterministic
+          - live
+        default: deterministic
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ inputs.suite }} suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx playwright install --with-deps chromium
+      - name: Run deterministic suite
+        if: inputs.suite == 'deterministic'
+        run: npm test
+      - name: Run live suite (skips when bot-blocked)
+        if: inputs.suite == 'live'
+        run: npm run test:live
+      - name: Upload report and traces
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-${{ inputs.suite }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
