@@ -9,7 +9,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "Playwright + TypeScript test patterns against the DuckDuckGo homepage",
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
