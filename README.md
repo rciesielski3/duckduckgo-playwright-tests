@@ -1,162 +1,80 @@
-# DuckDuckGo UI Testing Project – Playwright + TypeScript
+# DuckDuckGo UI Testing – Playwright + TypeScript
 
-This project demonstrates a complete UI automation testing approach using [Playwright](https://playwright.dev/) in TypeScript, applied to the DuckDuckGo homepage and search functionality. It integrates best practices for structure, clarity, and flexibility.
+[![Playwright](https://github.com/rciesielski3/duckduckgo-playwright-tests/actions/workflows/playwright.yml/badge.svg)](https://github.com/rciesielski3/duckduckgo-playwright-tests/actions/workflows/playwright.yml)
 
----
+A small portfolio project showing UI test **patterns** with [Playwright](https://playwright.dev/) and TypeScript against the DuckDuckGo homepage: Page Object Model, role-based locators, network mocking, request assertions, negative inputs and a baseline-gated accessibility check.
 
-## 🧠 Key Testing Principles & Focus Areas
+The third-party site is not ours, so the suite is split by what each test can reliably prove.
 
-Testing UI isn't just about checking what appears — it's about verifying **user experience**, **app behavior**, **accessibility**, and **system resilience**.
+## Deterministic vs live
 
-The following areas are emphasized:
+| Suite | Command | What it does | Blocking |
+| --- | --- | --- | --- |
+| Deterministic | `npm test` | Loads the real homepage, but the **results page and download funnel are mocked** with `page.route`. Asserts the structure of the homepage and what the page submits (the `q` request parameter). | Yes |
+| Live (`@live`) | `npm run test:live` | One real search against duckduckgo.com. | No |
 
-### 1. **Test What Matters Most**
+- **Search flow / negative input** (`searchFlow`, `negativeInput`): results come from fixtures in `tests/fixtures/`. They encode assumptions about the results-page contract (`data-testid="result"`), not a copy of the real page. Blank input is checked to never be submitted, with a positive control.
+- **Download link** (`downloadRedirect`): asserts the stable `href` contract (`/windows?origin=funnel_home...`) and mocks the funnel response instead of following the real one.
+- **Accessibility** (`accessibility`): runs axe on the homepage and fails on any **new** critical/serious rule that is not listed in `tests/a11y-baseline.json` (known third-party issues, each with a reason). The raw axe results are attached to the report. Stale baseline entries are shown as annotations.
+- **Live smoke** (`liveSearch`): asserts at least one real result.
 
-- Critical user journeys (e.g., search, navigation)
-- Primary UI elements and CTAs
-- Input validation and edge case handling
+### Known limitation: bot protection
 
-### 2. **Separation of Concerns**
+DuckDuckGo answers many automated clients, especially from datacenter IPs, with an HTTP 418 bot page on the results page. The `@live` test detects this and is reported as **skipped with a visible reason** instead of failing or passing silently. No stealth or user-agent spoofing is used. A skipped live run therefore means "could not verify from this network", not "search works".
 
-- Logic for UI actions is abstracted using the Page Object Model (POM)
-- Tests describe _what_ to verify, not _how_ it's done
+## Run locally
 
-### 3. **Robust Locator Strategy**
+```bash
+npm ci
+npx playwright install chromium
 
-- `getByRole`, `getByTestId`, and ARIA labels are prioritized for stability and accessibility awareness
-- Avoid brittle CSS selectors
+npm test              # deterministic suite (excludes @live)
+npm run test:live     # live smoke, skips on bot block
+npm run typecheck     # tsc --noEmit
+npm run report        # open the last HTML report
+```
 
-### 4. **Accessibility Awareness**
+Other useful flags: `npx playwright test --headed`, `--ui`, or a single file such as `tests/specs/negativeInput.spec.ts`.
 
-- Built-in a11y validations ensure the interface is perceivable, operable, and understandable
-- Reports highlight WCAG rule violations
+## CI
 
-### 5. **Negative Testing**
+`.github/workflows/playwright.yml` runs **on demand only** (`workflow_dispatch`) to save resources. Open Actions > Playwright > Run workflow and choose `deterministic` or `live`, or use the CLI:
 
-- Inputs that are empty, malformed, or unusual shouldn't break the flow
-- Validates how the system fails — gracefully, without errors or inconsistent UI state
+```bash
+gh workflow run playwright.yml -f suite=deterministic
+gh workflow run playwright.yml -f suite=live
+```
 
-### 6. **Mocking External Behavior**
+It runs on `ubuntu-24.04` with Node 22 and Chromium only, with read-only permissions and a 15 minute timeout.
 
-- When testing redirections or integrations, simulate responses to isolate front-end logic
-- Example: redirection is mocked to avoid relying on third-party servers
+### Opening the report and traces
 
----
+Each run uploads an artifact (`playwright-deterministic` or `playwright-live`) containing `playwright-report/` and `test-results/`. Download and unzip it, then:
 
-## ✅ Test Coverage Overview
+```bash
+npx playwright show-report path/to/playwright-report
+npx playwright show-trace path/to/test-results/<test-folder>/trace.zip   # recorded on first retry
+```
 
-### 🔹 Static UI Tests (`homepageUi.spec.ts`)
-
-- Checks visibility of search box, logo, headings, CTA links
-- Ensures critical homepage elements are not missing
-
-### 🔹 Functional Search Flow (`searchFlow.spec.ts`)
-
-- Enters query in search box
-- Submits with `Enter`
-- Verifies that the results page loads and content appears
-
-### 🔹 Accessibility Validation (`accessibility.spec.ts`)
-
-- Uses `axe-core` integration to run WCAG-level checks
-- Reports any contrast, role, or structure violations
-
-### 🔹 Negative Input Handling (`negativeInput.spec.ts`)
-
-- Handles invalid characters, empty fields, and whitespace input
-- Ensures app remains on homepage, or shows no results — without breaking
-
-### 🔹 Route Interception Test (`downloadRedirect.spec.ts`)
-
-- Mocks the browser download button redirect
-- Ensures expected behavior regardless of external URL response
-
----
-
-## 💡 Best Practices Reflected
-
-- **Descriptive test names**: Each test clearly states its intent
-- **Reusable components**: Via `HomePage` and `SearchResultsPage`
-- **Assert minimal UI assumptions**: Check only what must be visible
-- **Scalable test setup**: Easy to expand with new flows or conditions
-- **Avoid hardcoded waits**: Use locators and timeouts smartly
-
----
-
-## 🧪 Testing Considerations
-
-- Use semantic and resilient locators (`getByRole`, `getByLabel`, `getByTestId`) for consistent targeting, even as DOM structures change.
-- Group tests by behavior (not by technical implementation).
-- Limit the number of assertions per test to isolate failures and improve clarity.
-- Emulate realistic user flows (e.g. searching, clicking links, keyboard input) to validate actual usage paths.
-- Handle strict-mode errors by narrowing queries with `.first()` or `.nth()` where multiple elements match the same selector.
-- Validate critical path elements first: if they break, the experience breaks.
-- Log contextual output (e.g. search result summaries) to enhance debugging or review.
-- Use route mocking to isolate frontend behavior from unpredictable external endpoints.
-- Include accessibility checks to ensure the application supports all users, not just sighted or mouse-based interaction.
-
----
-
-## 📁 Project Structure
+## Project structure
 
 ```
 tests/
-├── pages/
-│   ├── HomePage.ts              # Homepage interactions
-│   └── SearchResultsPage.ts     # Result list validation
-│
-├── specs/
-│   ├── accessibility.spec.ts
-│   ├── downloadRedirect.spec.ts
-│   ├── homepageUi.spec.ts
-│   ├── negativeInput.spec.ts
-│   └── searchFlow.spec.ts
+├── pages/                  # HomePage, SearchResultsPage (POM)
+├── support/searchMock.ts   # page.route helper that records submitted queries
+├── fixtures/               # mocked results HTML
+├── a11y-baseline.json      # accepted third-party axe rules
+└── specs/
+    ├── accessibility.spec.ts
+    ├── downloadRedirect.spec.ts
+    ├── homepageUi.spec.ts
+    ├── liveSearch.spec.ts   # @live
+    ├── negativeInput.spec.ts
+    └── searchFlow.spec.ts
 ```
 
----
+## Author
 
-## 🚀 Run Tests
+[Rafał Ciesielski](https://github.com/rciesielski3) · [LinkedIn](https://www.linkedin.com/in/rafa%C5%82-ciesielski-820309100/) · [Portfolio](https://rciesielski3.github.io/portfolio/)
 
-```bash
-# Run all
-npx playwright test
-
-# Debug with browser visible
-npx playwright test --headed
-
-# Interactive test runner (UI mode)
-npx playwright test --ui
-
-# Run a single file
-npx playwright test tests/specs/negativeInput.spec.ts
-
-# Open HTML report
-npx playwright show-report
-```
-
----
-
-## 📌 Summary
-
-This test suite balances structure and flexibility. Tests cover content, behavior, accessibility, and external interaction, ensuring the application delivers a working and user-friendly experience. Structure and naming conventions are aligned to make the test suite easy to expand, adapt, or reuse.
-
-It's not just about green checks — it's about confidence in product quality.
-
----
-
-## 🧑‍💻 Author
-
-Created with 💡 by [**Rafał Ciesielski**](https://github.com/rciesielski3)
-
-- [LinkedIn](https://www.linkedin.com/in/rafa%C5%82-ciesielski-820309100/)
-- [GitHub](https://github.com/rciesielski3)
-- [Portfolio](https://rciesielski3.github.io/portfolio/)
-
----
-
-## 📄 License
-
-MIT License  
-Please credit if you reuse it in your own work 🙌
-
-[☕ Buy Me a Coffee](https://buycoffee.to/adateo)
+MIT License. Please credit if you reuse it.
